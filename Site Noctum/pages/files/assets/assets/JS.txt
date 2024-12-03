@@ -1,0 +1,136 @@
+let unlockAttempts = 0;
+const maxAttempts = 4;
+let lockedOut = false;
+const lockoutDuration = 300000; 
+let lockoutTimeout;
+let securityTimeout;
+const passwordRegex = /^[a-zA-Z0-9]+$/;
+const sound = new Audio('./assets/error.wav');
+const accessLevels = {
+    "welcometositenoctum": 1,
+    "zZXrq7PfK5fA9varv3H3zdxVb": 2,
+    "85xjHNRTSP5zr47cxsAMMC6Rf": 3,
+    "3U4BFBFG3PsYcjB8UgMgDB7wm": 4,
+    "gKZV3tj3ycSvH4tx8fpS5fDqH": 5
+};
+let unlockedLevels = {
+    1: false,
+    2: false,
+    3: false,
+    4: false,
+    5: false
+};
+function showError(messageId, messageText = 'An error occurred') {
+    const errorElement = document.getElementById(messageId);
+    if (errorElement) {
+        errorElement.innerHTML = `
+            <span class="close-btn" onclick="hideError('${messageId}')">X</span> ${messageText}
+        `;
+        errorElement.classList.remove("error-message-hidden");
+        errorElement.classList.add("error-message-visible");
+    }
+}
+function hideError(messageId) {
+    const errorElement = document.getElementById(messageId);
+    if (errorElement) {
+        errorElement.classList.remove("error-message-visible");
+        errorElement.classList.add("error-message-hidden");
+    }
+}
+async function unlockFiles() {
+    if (lockedOut) {
+        alert("You have been locked out. Please try again later.");
+        hideError('access-error');
+        return;
+    }
+    const passwordInput = document.getElementById("access-password").value;
+    if (!passwordRegex.test(passwordInput)) {
+        showError('access-error', 'Invalid password format. Only alphanumeric characters are allowed.');
+        return;
+    }
+    const level = accessLevels[passwordInput];
+    if (level) {
+        await unlockLevelFiles(level);
+        hideError('access-error');
+        hideError('locked-out-message');
+        hideError('timeout-message');
+        unlockAttempts = 0;
+        startSecurityTimeout();
+    } else {
+        handleIncorrectPassword();
+    }
+}
+async function unlockLevelFiles(level) {
+    for (let i = 1; i <= level; i++) {
+        const fileElement = document.getElementById(`classified-files-level-${i}`);
+        if (!fileElement.classList.contains("classified-files-hidden")) return;
+        await new Promise(resolve => setTimeout(resolve, 500)); 
+        fileElement.classList.remove("classified-files-hidden");
+        unlockedLevels[i] = true;
+    }
+}
+function handleIncorrectPassword() {
+    unlockAttempts++;
+    const attemptsLeft = maxAttempts - unlockAttempts;
+    showError('access-error', `Incorrect password. You have ${attemptsLeft} attempt(s) left.`);
+    sound.play();
+    if (unlockAttempts >= maxAttempts) {
+        handleLockout();
+    }
+}
+function handleLockout() {
+    hideError('access-error');
+    showError('locked-out-message', 'You have been temporarily locked out due to too many failed attempts. Please wait.');
+    lockedOut = true;
+    lockoutTimeout = setTimeout(() => {
+        lockedOut = false;
+        unlockAttempts = 0;
+        hideError('locked-out-message');
+    }, lockoutDuration);
+}
+function startSecurityTimeout() {
+    clearTimeout(securityTimeout);
+    securityTimeout = setTimeout(() => {
+        const files = document.querySelectorAll(".classified-files");
+        files.forEach(file => {
+            if (!file.classList.contains("classified-files-hidden")) {
+                file.classList.add("classified-files-hidden");
+            }
+        });
+        showError('timeout-message', 'Session expired due to inactivity.');
+    }, 300000); 
+}
+function toggleFileAccess(fileId) {
+    const fileElement = document.getElementById(fileId);
+    fileElement.classList.toggle('classified-files-hidden');
+    const isHidden = fileElement.classList.contains('classified-files-hidden');
+    fileElement.animate(
+        [
+            { opacity: isHidden ? 0 : 1, transform: `scale(${isHidden ? 0.8 : 1})` },
+            { opacity: isHidden ? 1 : 0, transform: `scale(${isHidden ? 1 : 0.8})` }
+        ],
+        {
+            duration: 600,
+            easing: 'ease-out',
+            fill: 'forwards'
+        }
+    );
+}
+document.querySelectorAll('.button').forEach(button => {
+    button.addEventListener('click', (e) => {
+        e.preventDefault();
+        const action = button.getAttribute('data-action');
+        if (action === 'unlock') unlockFiles();
+    });
+});
+document.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter') unlockFiles();
+});
+window.addEventListener('scroll', () => {
+    const files = document.querySelectorAll('.classified-files-hidden');
+    files.forEach(file => {
+        if (file.getBoundingClientRect().top < window.innerHeight) {
+            file.classList.remove('classified-files-hidden');
+        }
+    });
+});
