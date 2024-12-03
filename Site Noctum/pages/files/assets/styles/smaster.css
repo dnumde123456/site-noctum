@@ -34,3 +34,6 @@ body.busy {
 section > ul > li {
     list-style: disc;
 }
+a:hover{
+    cursor: url('../cursors/link.cur'), auto !important; 
+}
