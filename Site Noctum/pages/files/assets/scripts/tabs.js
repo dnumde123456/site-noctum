@@ -1,0 +1,40 @@
+function aktywujZakladke(zakladkaId) {
+    document.getElementById('tablink1').style.display = 'none';
+    document.getElementById('tablink2').style.display = 'none';
+
+    document.getElementById(zakladkaId).style.display = 'block';
+}
+
+function openMain() {
+    aktywujZakladke('tablink1');
+}
+
+function openNews() {
+    aktywujZakladke('tablink2');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    aktywujZakladke('tablink1');
+});
+
+function createSnowflakes() {
+    const snowflakeCount = 250;
+    const snowflakeContainer = document.createElement('div');
+    snowflakeContainer.setAttribute('class', 'snowflake-container');
+    document.body.appendChild(snowflakeContainer);
+
+    for (let i = 0; i < snowflakeCount; i++) {
+        const snowflake = document.createElement('div');
+        snowflake.innerText = '❄';
+        snowflake.classList.add('snowflake');
+        snowflake.style.left = Math.random() * 100 + 'vw';
+        snowflake.style.fontSize = Math.random() * 1.5 + 0.5 + 'em';
+        snowflake.style.animationDuration = Math.random() * 3 + 2 + 's';
+        snowflake.style.animationDelay = Math.random() * 5 + 's';
+        snowflake.style.setProperty('--dx', (Math.random() - 0.5) * 2);
+
+        snowflake.style.top = '-5vh';
+        snowflakeContainer.appendChild(snowflake);
+    }
+}
+document.addEventListener('DOMContentLoaded', createSnowflakes);
